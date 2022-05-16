@@ -1,0 +1,191 @@
+
+Prediction-Assignment-Writeup
+
+SMS
+
+8 de março de 2017
+
+
+Prediction-Assignment-Writeup
+
+Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+
+I-) Essential Packages
+IscaretInstalled <- require("caret")
+## Loading required package: caret
+## Warning: package 'caret' was built under R version 3.3.2
+## Loading required package: lattice
+## Loading required package: ggplot2
+## Warning: package 'ggplot2' was built under R version 3.3.2
+if(!IscaretInstalled){
+    install.packages("caret")
+    library("caret")
+    }
+
+IsrandomForestInstalled <- require("randomForest")
+## Loading required package: randomForest
+## Warning: package 'randomForest' was built under R version 3.3.3
+## randomForest 4.6-12
+## Type rfNews() to see new features/changes/bug fixes.
+## 
+## Attaching package: 'randomForest'
+## The following object is masked from 'package:ggplot2':
+## 
+##     margin
+if(!IsrandomForestInstalled){
+    install.packages("randomForest")
+    library("randomForest")
+    }
+
+IsRpartInstalled <- require("rpart")        
+## Loading required package: rpart
+## Warning: package 'rpart' was built under R version 3.3.2
+if(!IsRpartInstalled){
+    install.packages("rpart")
+    library("rpart")
+    }
+
+#Set seed for reproducability
+set.seed(20000)
+
+
+II-) Data Processing
+#Load the data
+trainUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"   
+testUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv" 
+
+
+III-)Cleaning data
+#Delete missing values 
+training <- read.csv(url(trainUrl), na.strings=c("NA","#DIV/0!",""))  
+testing <- read.csv(url(testUrl), na.strings=c("NA","#DIV/0!",""))
+
+#Remove variables with near zero variance
+training<-training[,colSums(is.na(training)) == 0]
+testing <-testing[,colSums(is.na(testing)) == 0]
+
+#Remove columns that are not predictors, which are the the seven first columns
+training   <-training[,-c(1:7)]
+testing <-testing[,-c(1:7)]
+
+#The data after cleaning
+dim(training)
+## [1] 19622    53
+
+
+IV-) Cross-validation
+#In order to get out-of-sample errors, split the training data in training (75%) and testing (25%) data) subsets:
+inTrain <- createDataPartition(y=training$classe, p=0.75, list=FALSE)    
+NEOTraining <- training[inTrain, ]
+NEOTesting <- training[-inTrain, ]  
+dim(NEOTraining)
+## [1] 14718    53
+dim(NEOTesting)
+## [1] 4904   53
+
+
+V-) Prediction Models
+#DECISION TREE
+#Fit model on NEOTraining data
+fitDT <- rpart(classe ~ ., data=NEOTraining, method="class")
+
+#Use model to predict class in validation set (NEOTesting)
+predictionDT <- predict(fitDT, NEOTesting, type = "class")
+
+#Estimate the errors of the prediction algorithm in the Decision Tree model
+confusionMatrix(NEOTesting$classe, predictionDT)
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1288   35   35   13   24
+##          B  139  511  137   75   87
+##          C    9   51  692   53   50
+##          D   56   60  102  520   66
+##          E   15   58  108   48  672
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.751           
+##                  95% CI : (0.7387, 0.7631)
+##     No Information Rate : 0.3073          
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.6844          
+##  Mcnemar's Test P-Value : < 2.2e-16       
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.8547   0.7147   0.6443   0.7334   0.7475
+## Specificity            0.9685   0.8954   0.9574   0.9323   0.9428
+## Pos Pred Value         0.9233   0.5385   0.8094   0.6468   0.7458
+## Neg Pred Value         0.9376   0.9484   0.9057   0.9539   0.9433
+## Prevalence             0.3073   0.1458   0.2190   0.1446   0.1833
+## Detection Rate         0.2626   0.1042   0.1411   0.1060   0.1370
+## Detection Prevalence   0.2845   0.1935   0.1743   0.1639   0.1837
+## Balanced Accuracy      0.9116   0.8051   0.8009   0.8329   0.8452
+#RANDOM FOREST
+#Fit model on NEOTraining data
+fitRF <- randomForest(classe ~ ., data=NEOTraining, method="class")
+
+#Use model to predict class in validation set (NEOTesting)
+predictionRF <- predict(fitRF, NEOTesting, type = "class")
+
+#Estimate the errors of the prediction algorithm in the Random Forest
+confusionMatrix(NEOTesting$classe, predictionRF)
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1395    0    0    0    0
+##          B    3  944    2    0    0
+##          C    0    8  847    0    0
+##          D    0    0    6  797    1
+##          E    0    0    0    1  900
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.9957          
+##                  95% CI : (0.9935, 0.9973)
+##     No Information Rate : 0.2851          
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.9946          
+##  Mcnemar's Test P-Value : NA              
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9979   0.9916   0.9906   0.9987   0.9989
+## Specificity            1.0000   0.9987   0.9980   0.9983   0.9998
+## Pos Pred Value         1.0000   0.9947   0.9906   0.9913   0.9989
+## Neg Pred Value         0.9991   0.9980   0.9980   0.9998   0.9998
+## Prevalence             0.2851   0.1941   0.1743   0.1627   0.1837
+## Detection Rate         0.2845   0.1925   0.1727   0.1625   0.1835
+## Detection Prevalence   0.2845   0.1935   0.1743   0.1639   0.1837
+## Balanced Accuracy      0.9989   0.9952   0.9943   0.9985   0.9993
+
+
+VI-) TEST THE MODEL TO PREDICT 20 DIFFERENT TEST CASES
+# Perform prediction
+predictSubmission <- predict(fitRF, testing, type="class")
+predictSubmission
+##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
+## Levels: A B C D E
