@@ -1,0 +1,8 @@
+name: Document
+title:
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/289531/d605f880415a4fd1954d0215ca53261a
+bundleId: https://api.rpubs.com/api/v1/document/289531/d605f880415a4fd1954d0215ca53261a
+url: http://rpubs.com/publish/claim/289531/b440e01eed9d40869aa0b3ac55ca9a20
+when: 1499347823.20024
